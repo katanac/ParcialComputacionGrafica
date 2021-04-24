@@ -1,80 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-  </head>
-  <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/94/three.min.js" integrity="sha512-ZGgXd6TB5qjtvTU6Q5o/LJM4pwLNy8U8XXJh+vJZDXp2wC8ASrl4WOeivaq2fpYc3TnTCLzyDvVjY8YhvNYaXg==" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/three@0.85.0/examples/js/controls/OrbitControls.js"></script> 
-    <script>
-      var scene;
-      var camera;
-      var renderer;
-      var plane;
-      var controls;
 
-      function createCamera() {
-        camera = new THREE.PerspectiveCamera(
-          110,
-          window.innerWidth / window.innerHeight,
-          1,
-          100
-        );
-        camera.position.z = 10;
-        camera.name = "camara";
-      }
+</head>
 
-      function createRenderer() {
-        renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+<body>
+    <script data-require="three.js@0.0.0-r61" data-semver="0.0.0-r61"
+        src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r61/three.min.js"></script>
+    <div id="container">
+    </div>
+    <script type="text/javascript">
 
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-      }
+        var container, renderer, camera, mainLight, scene;
+        var ball, rectangleOne, rectangleTwo, plane, bstarted;
+        const FIELD_WIDTH = 1200, FIELD_LENGTH = 3000, BALL_RADIUS = 20, PADDLE_WIDTH = 200, PADDLE_HEIGHT = 30;
+        var xSpeed = 3.0, direction = "stop";
 
-      function createPlane() {
-        let Geometry = new THREE.PlaneGeometry(100, 80, 1, 1);
-        let Material = new THREE.MeshBasicMaterial({ color: "#646b63", flatShading: true });
-        plane = new THREE.Mesh(Geometry, Material);
-        scene.add(plane);
+        function createRender() {
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 1);
+            container = document.getElementById('container');
+            container.appendChild(renderer.domElement);
 
-        plane.rotation.set(0,0,0);
-        plane.position.set(0,0,0);
-      }
+        }
 
-      function axesHelper() {
-        const axesHelper = new THREE.AxesHelper(50);
-        scene.add(axesHelper);
-      }
+        function createCamera() {
+            camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 10, 10000);
+            camera.position.set(0, 250, 2000);
+            scene.add(camera);
+        }
 
-      function init() {
-        //create scene
-        scene = new THREE.Scene();
 
-        //create camera
-        createCamera();
+        function createPlane() {
+            var planeGeometry = new THREE.CubeGeometry(FIELD_WIDTH, 5, FIELD_LENGTH, 1, 1, 1),
+                planeMaterial = new THREE.MeshLambertMaterial({ color: 0x4A148C });
+            plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.position.set(0, -50, 0);
 
-        //create axel
-        axesHelper();
+            scene.add(plane);
+            rectangleOne = createRectanglePlayer();
+            rectangleOne.position.z = FIELD_LENGTH / 2;
+            rectangleTwo = createRectangleCPU();
+            rectangleTwo.position.z = -FIELD_LENGTH / 2;
+        }
 
-        //create objetos
-        createPlane();
 
-        //create rederer
-        createRenderer();
-      }
+        function createRectangleCPU() {
+            var rectangleGeometry = new THREE.CubeGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, 10, 1, 1, 1),
+                rectangleMaterial = new THREE.MeshLambertMaterial({ color: 0x29B6F6 }),
+                rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
+            scene.add(rectangle);
+            return rectangle;
+        }
 
-      function animate(time) {
+
+        function createRectanglePlayer() {
+            var rectangleGeometry = new THREE.CubeGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, 10, 1, 1, 1),
+                rectangleMaterial = new THREE.MeshLambertMaterial({ color: 0xF57C00 }),
+                rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
+            scene.add(rectangle);
+            return rectangle;
+        }
+
+
+        function createBall() {
+
+            var ballGeometry = new THREE.SphereGeometry(BALL_RADIUS, 16, 16),
+                ballMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 });
+            ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            scene.add(ball);
+
+            camera.lookAt(ball.position);
+
+            mainLight = new THREE.HemisphereLight(0xFFFFFF, 0x003300);
+            scene.add(mainLight);
+
+            camera.lookAt(ball.position);
+
+        }
+
+
+        function startBall() {
+            var direction = Math.random() > 0.5 ? -1 : 1;
+            ball.$velocity = {
+                x: 0,
+                z: direction * 20
+            };
+            ball.$stopped = false;
+        }
+
+
+        function movementCPU() {
+            var ballPos = ball.position,
+                cpuPos = rectangleTwo.position;
+
+            if (cpuPos.x - 100 > ballPos.x) {
+                cpuPos.x -= Math.min(cpuPos.x - ballPos.x, 6);
+            } else if (cpuPos.x - 100 < ballPos.x) {
+                cpuPos.x += Math.min(ballPos.x - cpuPos.x, 6);
+            }
+        }
+
+        function BallMovement() {
+            if (!ball.$velocity) {
+                startBall();
+            }
+
+            if (ball.$stopped) {
+                return;
+            }
+
+            if (CollisionPlane()) {
+                ball.$velocity.x *= -1;
+            }
+
+            if (collisionRectangleOne()) {
+                CollisionBall(rectangleOne);
+            }
+
+            if (collisionRectangleTwo()) {
+                CollisionBall(rectangleTwo);
+            }
+
+        }
+
+        function updateBallPosition() {
+            var ballPos = ball.position;
+            ballPos.x += ball.$velocity.x;
+            ballPos.z += ball.$velocity.z;
+        }
+
+        function CollisionPlane() {
+            var ballPosition = ball.position.x,
+                halfFieldWidth = FIELD_WIDTH / 2;
+            return ballPosition - BALL_RADIUS < -halfFieldWidth || ballPosition + BALL_RADIUS > halfFieldWidth;
+        }
+
+        function CollisionBall(rectangle) {
+            ball.$velocity.x = (ball.position.x - rectangle.position.x) / 5;
+            ball.$velocity.z *= -1;
+        }
+
+        function collisionRectangleOne() {
+            return ball.position.z + BALL_RADIUS >= rectangleOne.position.z &&
+                collisionRectangle(rectangleOne);
+        }
+
+        function collisionRectangleTwo() {
+            return ball.position.z - BALL_RADIUS <= rectangleTwo.position.z &&
+                collisionRectangle(rectangleTwo);
+        }
+
+
+        function collisionRectangle(rectangle) {
+            var halfPaddleWidth = PADDLE_WIDTH / 2,
+                reactanglePosition = rectangle.position.x,
+                ballPosition = ball.position.x;
+            return ballPosition > reactanglePosition - halfPaddleWidth &&
+                ballPosition < reactanglePosition + halfPaddleWidth;
+        }
+
+        function movenmentBallStart() {
+            bstarted = true;
+            animate();
+        }
+
+        function movenmentBallStop() {
+            bstarted = false;
+        }
+
+
+        function axesHelper() {
+            const axesHelper = new THREE.AxesHelper(50);
+            scene.add(axesHelper);
+        }
+
+
+        function init() {
+
+            //initialization scene
+            scene = new THREE.Scene();
+
+            //create render
+            createRender();
+
+            //create camera
+            createCamera();
+
+            //create rectangles
+            createPlane();
+
+            //create ball
+            createBall();
+            //movementBall
+            movenmentBallStart();
+
+            //axesHelper
+            axesHelper();
+
+            document.addEventListener("keydown", onDocumentKeyDown, false);
+        }
+
+
+        function onDocumentKeyDown(event) {
+            var keyCode = event.which;
+            // Izquierda
+            if (keyCode == 37) {
+                if (direction == "left") {
+                    direction = "right";
+                } else if (direction == "stop") {
+                    direction = "right";
+                }
+                // Derecha
+            } else if (keyCode == 39) {
+                if (direction == "right") {
+                    direction = "left";
+                } else if (direction == "stop") {
+                    direction = "left";
+                }
+            }
+        };
+
+
+        function animate() {
+            if (bstarted) {
+                requestAnimationFrame(animate);
+
+                if (direction == "right") {
+                    rectangleOne.position.x -= xSpeed;
+                } else if (direction == "left") {
+                    rectangleOne.position.x += xSpeed;
+                } else {
+                }
+
+                BallMovement();
+                updateBallPosition();
+                movementCPU();
+
+                renderer.render(scene, camera);
+
+            }
+        }
+
+        init();
         requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-        controls.update(); 
-      }
 
-      init();
-      requestAnimationFrame(animate);
     </script>
-  </body>
+</body>
+
 </html>
