@@ -23,7 +23,7 @@
 
         function createRender() {
             renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(1515, 774);
             renderer.setClearColor(0x000000, 1);
             container = document.getElementById('container');
             container.appendChild(renderer.domElement);
@@ -176,12 +176,6 @@
         }
 
 
-        function axesHelper() {
-            const axesHelper = new THREE.AxesHelper(50);
-            scene.add(axesHelper);
-        }
-
-
         function init() {
 
             //initialization scene
@@ -200,9 +194,6 @@
             createBall();
             //movementBall
             movenmentBallStart();
-
-            //axesHelper
-            axesHelper();
 
             document.addEventListener("keydown", onDocumentKeyDown, false);
         }
