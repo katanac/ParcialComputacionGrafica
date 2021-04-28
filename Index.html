@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>ParcialCorte2</title>
 
 </head>
 
@@ -20,7 +20,7 @@
         var ball, rectangleOne, rectangleTwo, plane, bstarted;
         const FIELD_WIDTH = 1200, FIELD_LENGTH = 3000, BALL_RADIUS = 20, PADDLE_WIDTH = 200, PADDLE_HEIGHT = 30;
         var xSpeed = 3.0, direction = "stop";
-
+        //función crear render
         function createRender() {
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(1515, 774);
@@ -29,14 +29,14 @@
             container.appendChild(renderer.domElement);
 
         }
-
+        //función crear camara
         function createCamera() {
             camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 10, 10000);
             camera.position.set(0, 250, 2000);
             scene.add(camera);
         }
 
-
+        //función crear plano
         function createPlane() {
             var planeGeometry = new THREE.CubeGeometry(FIELD_WIDTH, 5, FIELD_LENGTH, 1, 1, 1),
                 planeMaterial = new THREE.MeshLambertMaterial({ color: 0x4A148C });
@@ -50,7 +50,7 @@
             rectangleTwo.position.z = -FIELD_LENGTH / 2;
         }
 
-
+        //función crear rectangulo cpu
         function createRectangleCPU() {
             var rectangleGeometry = new THREE.CubeGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, 10, 1, 1, 1),
                 rectangleMaterial = new THREE.MeshLambertMaterial({ color: 0x29B6F6 }),
@@ -59,7 +59,7 @@
             return rectangle;
         }
 
-
+        //función crear rectangulo del jugador
         function createRectanglePlayer() {
             var rectangleGeometry = new THREE.CubeGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, 10, 1, 1, 1),
                 rectangleMaterial = new THREE.MeshLambertMaterial({ color: 0xF57C00 }),
@@ -68,7 +68,7 @@
             return rectangle;
         }
 
-
+        //función crear pelota
         function createBall() {
 
             var ballGeometry = new THREE.SphereGeometry(BALL_RADIUS, 16, 16),
@@ -85,17 +85,17 @@
 
         }
 
-
+        //función que genera el movimiento inicial de la pelota
         function startBall() {
             var direction = Math.random() > 0.5 ? -1 : 1;
             ball.$velocity = {
                 x: 0,
-                z: direction * 20
+                z: direction * 11
             };
             ball.$stopped = false;
         }
 
-
+        //función que genera el movimiento del rectanguloCPU
         function movementCPU() {
             var ballPos = ball.position,
                 cpuPos = rectangleTwo.position;
@@ -106,7 +106,7 @@
                 cpuPos.x += Math.min(ballPos.x - cpuPos.x, 6);
             }
         }
-
+        //función movimiento de la pelota con respecto a movimiento y colision
         function BallMovement() {
             if (!ball.$velocity) {
                 startBall();
@@ -129,35 +129,35 @@
             }
 
         }
-
+        //función que genera la actualización de la posición de la pelota
         function updateBallPosition() {
             var ballPos = ball.position;
             ballPos.x += ball.$velocity.x;
             ballPos.z += ball.$velocity.z;
         }
-
+        //función que genera la colision de los bordes del plano
         function CollisionPlane() {
             var ballPosition = ball.position.x,
                 halfFieldWidth = FIELD_WIDTH / 2;
             return ballPosition - BALL_RADIUS < -halfFieldWidth || ballPosition + BALL_RADIUS > halfFieldWidth;
         }
-
+        //función que genera la colision de la pelota
         function CollisionBall(rectangle) {
-            ball.$velocity.x = (ball.position.x - rectangle.position.x) / 5;
+            ball.$velocity.x = (ball.position.x - rectangle.position.x) / 10;
             ball.$velocity.z *= -1;
         }
-
+        //función que genera la colision con el rectangulo del jugador
         function collisionRectangleOne() {
             return ball.position.z + BALL_RADIUS >= rectangleOne.position.z &&
                 collisionRectangle(rectangleOne);
         }
-
+        //función que genera la colision con el rectangulo CPU
         function collisionRectangleTwo() {
             return ball.position.z - BALL_RADIUS <= rectangleTwo.position.z &&
                 collisionRectangle(rectangleTwo);
         }
 
-
+        //función de colision de rectangulos
         function collisionRectangle(rectangle) {
             var halfPaddleWidth = PADDLE_WIDTH / 2,
                 reactanglePosition = rectangle.position.x,
@@ -165,19 +165,13 @@
             return ballPosition > reactanglePosition - halfPaddleWidth &&
                 ballPosition < reactanglePosition + halfPaddleWidth;
         }
-
+        //funcion que inicia el movimiento de la pelota
         function movenmentBallStart() {
             bstarted = true;
             animate();
         }
 
-        function movenmentBallStop() {
-            bstarted = false;
-        }
-
-
         function init() {
-
             //initialization scene
             scene = new THREE.Scene();
 
@@ -198,10 +192,10 @@
             document.addEventListener("keydown", onDocumentKeyDown, false);
         }
 
-
+        //función que genera el movimiento del rectangulo jugador por medio del teclado
         function onDocumentKeyDown(event) {
             var keyCode = event.which;
-            // Izquierda
+                // Izquierda
             if (keyCode == 37) {
                 if (direction == "left") {
                     direction = "right";
